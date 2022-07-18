@@ -1,0 +1,562 @@
+#!/bin/sh
+# nyaa - package manager written in POSIX sh
+# Copyright 2022 Kreato
+#
+# This file is part of Kreato Linux.
+#
+# Kreato Linux is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Kreato Linux is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Kreato Linux.  If not, see <https://www.gnu.org/licenses/>.
+VERSION="v1.7dev"
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+CONF="/etc/nyaa.conf"
+INSTALLED_DIR="/etc/nyaa.installed/"
+MAIN_REPO_DIR="/etc/nyaa"
+# Root checker
+chkroot() {
+     if [ "$(id -u)" != "0" ]; then
+        err "nyaa: you have to be root"
+     fi
+ }
+
+# Default values if config file does not exist
+defvalues() {
+    export REPO_PATH="/etc/nyaa"
+    export DOWNLOADER="wget"
+    export MIRROR_PATH="https://mirror.kreato.dev"
+    export MODULE_PATH="/home/kreato/test_modules"
+}
+
+# Make required folders if they dont exist
+if [ ! -d "$INSTALLED_DIR/nyaa" ]
+then
+    echo "nyaa: new installation detected, making folders"
+    chkroot
+    mkdir -p $INSTALLED_DIR/nyaa
+    echo "/bin/nyaa" > $INSTALLED_DIR/nyaa/list_files
+    echo "$VERSION" > $INSTALLED_DIR/nyaa/version
+    echo "" > $INSTALLED_DIR/nyaa/deps
+fi
+
+defvalues
+# shellcheck source=/dev/null
+[ -f "$CONF" ] && . $CONF # Source the configuration file if it exists
+
+down() {
+    if [ "$1" != "" ];
+    then
+        case $DOWNLOADER in
+            "aria2")
+                aria2c "$@" || err "nyaa: an error occured while trying to download"
+            ;;
+            "axel")
+                axel "$@" || err "nyaa: an error occured while trying to download"
+            ;;
+            *)
+                wget "$@" || err "nyaa: an error occured while trying to download"
+            ;;
+        esac
+    else
+        err "nyaa: an error occured while trying to download"
+    fi
+}
+
+err() {
+    printf "%s\n" "$1"
+    exit 1
+}
+
+add_repo_dir() {
+    for i in $(echo $REPO_PATH | tr ";" "\n")
+    do
+        [ -d "$i/$1" ] && export REPO_DIR="$i"
+    done
+    [ -z "$REPO_DIR" ] && err "nyaa: package does not exist"
+}
+
+
+build_package() {
+    
+    # Checking if the user is root
+    chkroot
+    
+    # Set up some aliases so downloader does get used no matter what
+    alias wget="down"
+    alias axel="down"
+    alias aria2c="down"
+    
+    # Prebuilt tarball installer
+    if [ -f "$2" ] 
+    then
+          tar -hztf "$2" > /tmp/"$1".log
+        if [ "$4" = "-r" ]; then
+            ROOT="$5" install_package "$1" "$2"
+        else
+            ROOT="/" install_package "$1" "$2"
+        fi
+        exit 0
+     fi
+
+    # Exporting variables required to build the package
+    export ROOT=/tmp/nyaa_build
+    export SRCDIR=/tmp/nyaa_srcdir
+    export DESTDIR="$ROOT"
+    
+    # Removing the folders if they exist already
+    [ -d "$SRCDIR" ] && rm -rf $SRCDIR
+    [ -d "$ROOT" ] && rm -rf $ROOT
+
+    # Making the folders again
+    mkdir -p $ROOT
+    mkdir -p $SRCDIR
+   
+    add_repo_dir "$1"
+
+    # Sourcing the package runfile
+    # shellcheck source=/dev/null
+    . "$REPO_DIR"/"$1"/run
+
+    # Building the package and making it into a nice tarball
+    cd "$SRCDIR" || err "nyaa: $SRCDIR folder for some reason couldn't get created, please check permissions"
+    build
+    cd "$ROOT" || err "nyaa: $ROOT folder for some reason couldn't get created, please check permissions"
+    installpkg 2> /dev/null || echo "nyaa: installpkg function not found, skipping"
+    [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
+    tar -czvf /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz ./*
+    unset ROOT
+    
+    # Installing packaged tarball
+    if [ ! "$DONT_INSTALL" = "1" ]; then
+        # shellcheck disable=SC2194
+        case "-r" in
+            "$3")
+                export ROOT="$4"
+                ROOT="$4" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz
+                ;;
+            "$2")
+                export ROOT="$3"
+                ROOT="$3" install_package "$1" "/etc/nyaa.tarballs/nyaa-tarball-$1-$VERSION.tar.gz"
+                ;;
+            *)
+                export ROOT="/"
+                ROOT="/" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz
+                ;;
+        esac
+    fi
+} 
+
+install_package() {
+    # Install tarball 
+    add_repo_dir "$1"
+    if [ ! "$ROOT" = "" ]; then
+        cd "$ROOT" || err "nyaa: unknown error" 
+        tar -hxvf "$2" > /tmp/"$1".log
+        [ ! -d "$ROOT/$INSTALLED_DIR/$1" ] && mkdir -p "$ROOT/$INSTALLED_DIR/$1"
+        cp -rf "$REPO_DIR/$1/"* "$ROOT/$INSTALLED_DIR/$1"
+        mv /tmp/"$1".log "$ROOT/$INSTALLED_DIR/$1/list_files"
+    else
+        tar -xvf "$2" -C /
+        [ ! -d "$INSTALLED_DIR/$1" ] && mkdir -p "$INSTALLED_DIR/$1"
+        cp -rf "$REPO_DIR/$1/"* "$INSTALLED_DIR/$1"
+        mv /tmp/"$1".log "$INSTALLED_DIR/$1/list_files"
+    fi
+}
+
+
+# Install binaries from the repository
+# A feature long-waited, shipped with nyaa v1.4
+install_binaries() {
+    chkroot
+    add_repo_dir "$1"
+    #shellcheck source=/dev/null
+    . "$REPO_DIR"/"$1"/run
+    [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
+    TARBALL="nyaa-tarball-$1-$VERSION.tar.gz"
+    cd /etc/nyaa.tarballs || err "nyaa: an error occured"
+
+    for i in $(echo $MIRROR_PATH | tr ";" "\n")
+    do
+        if [ ! -f "/etc/nyaa.tarballs/$TARBALL" ]; then
+            down "$i"/nyaa-tarball-"$1"-"$VERSION".tar.gz || err "download failed with error"
+        else
+            break
+        fi
+    done
+    
+    # shellcheck disable=SC2194
+    case "-r" in
+        "$3")
+            export ROOT="$4"
+            ROOT="$4" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz
+            ;;
+        "$2")
+            export ROOT="$3"
+            ROOT="$3" install_package "$1" "/etc/nyaa.tarballs/nyaa-tarball-$1-$VERSION.tar.gz"
+            ;;
+        *)
+            export ROOT="/"
+            ROOT="/" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz
+            ;;
+    esac
+}
+
+    
+
+#
+# Dependency Handler
+#
+
+# Dependency handler consists of 3 seperate functions that call each other. 
+# These functions are named `chkdeps`, `chk_build_deps` and `dep_handler` as you can see below. 
+# This allows us to make a complete loop that doesnt exit until dependencies are in the `deps` (and `bdeps` if the package is built) environment variable.
+
+chkdeps() {
+    add_repo_dir "$2"
+    # shellcheck disable=SC2013
+    for cLine in $(cat "$REPO_DIR/$2/deps" 2> /dev/null)
+    do
+    if [ ! -d "$ROOT/$INSTALLED_DIR/$2" ]; then
+        deps="$deps $cLine"
+        if [ -n "$IS_BUILDED" ]; then
+            chk_build_deps "" "$cLine"  
+            IS_BUILDED=y dep_handler "" "$cLine"
+        else
+            dep_handler "" "$cLine"
+        fi
+    fi
+    done
+}
+
+chk_build_deps() {
+    add_repo_dir "$2"
+    [ ! -f "$REPO_DIR/$2/build_deps" ] && chkdeps "" "$2" 
+    # shellcheck disable=SC2013
+    for dLine in $(cat "$REPO_DIR/$2/build_deps" 2> /dev/null)
+    do
+    if [ ! -d "$ROOT/$INSTALLED_DIR/$2" ]; then
+        bdeps="$bdeps $dLine"
+        IS_BUILDED=y chkdeps "" "$dLine"
+    fi     
+    done
+}
+
+dep_handler() {
+    add_repo_dir "$2"
+    if [ "$2" = "" ]; then
+        printf "nyaa: have to supply a package name\n" 
+        exit 1
+    else    
+        if [ ! -d "$REPO_DIR/$2" ]; then
+            printf "nyaa: invalid package name/repo isnt initialized (nyaa u to initialize)\n"
+            exit 1
+        else
+            # shellcheck disable=SC2013
+            for Line in $(cat "$REPO_DIR/$2/deps" 2> /dev/null)	
+            do
+                deps="$deps $Line"
+                if [ -n "$IS_BUILDED" ]; then
+                    chk_build_deps "" "$Line" 
+                    IS_BUILDED=y chkdeps "" "$Line"
+                else
+                    chkdeps "" "$Line"
+                fi
+            done
+        fi
+    fi
+}
+
+#
+# Module Support
+#
+
+# Came with nyaa v1.7. Allows you to use modules to extend the package manager without modifying its code manually.
+module() {
+    # Variables:
+    # MODULE_NAME
+    # MODULE_VER
+    # MODULE_DESC
+    # required functions;
+    # main()
+    # help()
+    # version()
+    MODULE_ACTUAL_NAME="$2"
+    #shellcheck source=/dev/null
+    . "$MODULE_PATH/$MODULE_ACTUAL_NAME.nyaa"
+    case $3 in
+        "h")
+            help
+        ;;
+        "v")
+            version
+        ;;
+        *)
+            main "$@"
+        ;;
+    esac
+}
+
+module_list() {
+    cd $MODULE_PATH || exit 0
+    for i in *.nyaa; do 
+        #shellcheck source=/dev/null
+        . "$(realpath "$i")"
+        echo ""
+        echo "Module name: $MODULE_NAME"
+        echo "Module version: $MODULE_VER"
+        echo "Module description: $MODULE_DESC"
+        echo ""
+    done
+}
+
+# Removing packages
+# Basically removes everything in the list_files file of the package.
+remove_packages() {
+    chkroot
+    [ ! -f "$ROOT/$INSTALLED_DIR/$1/list_files" ] && echo "nyaa: package $1 is not installed" && exit 1
+    #shellcheck source=/dev/null
+    . "$INSTALLED_DIR/$1/run"
+    if ! command -v custom_uninstall >/dev/null 2>&1
+    then
+        while read -r file; do 
+	        rm -f "${ROOT:?}/${file:?}" 2>/dev/null
+	        if [ -z "$(ls -A "${ROOT:?}/$file" 2>/dev/null)" ]
+	        then
+		        rm -rf "${ROOT:?}/${file:?}" 2>/dev/null
+	        fi
+        done < "${ROOT:?}/$INSTALLED_DIR/$1/list_files"
+        rm -rf "${ROOT:?}/${INSTALLED_DIR:?}/${1:?}/"
+    else
+        custom_uninstall || echo "custom_uninstall script failed"
+        exit
+    fi
+}
+
+# Update repositories 
+# A basic git pull and a check to see if the repositories actually exist.
+update_packages() {
+    chkroot
+    [ ! -d "$MAIN_REPO_DIR" ] && git clone https://git.kreato.dev/kreato-linux/nyaa-repo $MAIN_REPO_DIR
+    for i in $(echo $REPO_PATH | tr ";" "\n")
+    do
+    cd "$i" || err "nyaa: couldn't cd onto $i, exiting"
+    git pull
+    done
+}
+
+
+# Package upgrader
+# Basically a simple for loop that checks if local package version equals to the repositories' package version. 
+upgrade_packages() {
+    cd "$INSTALLED_DIR" || err "nyaa: couldn't find nyaa installed directory"
+    for w in *
+    do
+        # shellcheck source=/dev/null
+        . "$INSTALLED_DIR/$w"/run
+	LOCAL_VERSION=$VERSION
+	add_repo_dir "$w"
+    #shellcheck source=/dev/null
+    . "$REPO_DIR/$w"/run
+	REPO_VERSION=$VERSION
+	if [ ! "$LOCAL_VERSION" = "$REPO_VERSION" ]
+        then
+            echo "nyaa: upgrading $w"
+            echo "nyaa: new version of $w: $REPO_VERSION"
+            if [ "$1" = "-b" ]; then
+                build_package "$w"
+            else
+                install_binaries "$w"
+            fi
+        fi
+    done
+}
+
+# Get information about the package from the runfile
+get_info() {
+    add_repo_dir "$1"
+    [ ! -f "$REPO_DIR/$1/run" ] && echo "nyaa: package does not exist" && exit 1
+    #shellcheck source=/dev/null
+    . "$REPO_DIR/$1"/run
+    [ -d "$INSTALLED_DIR/$1" ] && ISINSTALLED=yes
+    [ ! -d "$INSTALLED_DIR/$1" ] && ISINSTALLED=no
+    echo "package name: $NAME"
+    echo "package desc: $DESCRIPTION"
+    echo "package ver:  $VERSION"
+    echo "is installed: $ISINSTALLED"
+}
+
+case $1 in
+    "h")
+        printf "nyaa %s
+${BLUE}->${NC} h display help
+${BLUE}->${NC} b build package
+${BLUE}->${NC} i install binary packages
+${BLUE}->${NC} m nyaa modules
+${BLUE}->${NC} I get info about a package
+${BLUE}->${NC} r remove package
+${BLUE}->${NC} u update packages
+${BLUE}->${NC} U upgrade packages
+${BLUE}->${NC} v display version
+" "$VERSION"
+    ;;
+    "m")
+        case $2 in
+            "l")
+                module_list
+             ;;
+            "i")
+                echo "WIP"
+            ;;
+            *)
+            if  [ ! "$2" = "" ]
+            then
+                module "$@"
+            else
+                printf "nyaa modules %s
+${BLUE}->${NC} l list modules
+${BLUE}->${NC} i install modules
+You can run 'nyaa m <modulename>' to run the module directly.
+" "$VERSION"
+            fi
+            ;;
+        esac
+    ;;
+    "b")
+        # -r flag is for setting the ROOTFS variable.
+        # This checks where the -r flag is (or isn't) and sets the variables accordingly
+        #shellcheck disable=SC2194
+        case "-r" in
+            "$3")
+                export ROOT="$4" 
+            ;;
+            "$4")
+                export ROOT="$5" 
+            ;;
+            "$5")
+                export ROOT="$6"
+            ;;
+            *)
+                export ROOT="/" 
+            ;;
+        esac 
+        
+        chk_build_deps "$@"
+        deps="$(echo "$deps $bdeps" | tr ' ' '\n' | sort -u | xargs)"
+        if [ "$3" != "-y" ] && [ "$4" != "-y" ] && [ "$3" != "-n" ] && [ "$4" != "-n" ]; then
+            printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$2"
+            read -r yn
+        else
+            printf "Packages: %s %s\n" "$deps" "$2"
+        fi
+
+        # Need to refactor this code
+        # It just looks too long and has a lot of checks that i think can just be done much more efficiently.
+        if [ "$yn" = "y" ] || [ "$yn" = "Y" ] || [ "$3" = "-y" ] || [ "$4" = "-y" ] || [ "$3" = "-o" ] || [ "$4" = "-o" ]; then
+            if [ "$deps" != "" ]; then
+                for word in $deps; do
+                    if [ "$3" = "-o" ] || [ "$4" = "-o" ]; then
+                        [ ! -d "$ROOT/$INSTALLED_DIR/$word" ] && DONT_INSTALL=1 build_package "$word" -r "$(realpath $ROOT)" 
+                    else
+                        [ ! -d "$ROOT/$INSTALLED_DIR/$word" ] && build_package "$word" -r "$(realpath $ROOT)" 
+                    fi
+                done
+            else
+                echo "nyaa: dependencies already installed, continuing"
+            fi
+            build_package "$2" "$3" "$4" "$5" "$6" || err "nyaa: an error occured during compilation"
+        else    
+            echo "nyaa: exiting."
+            exit 0
+        fi
+    ;;
+    "i")
+        # -r flag is for setting the ROOTFS variable.
+        # This checks where the -r flag is (or isn't) and sets the variables accordingly
+        # shellcheck disable=SC2194
+        case "-r" in
+            "$3")
+                export ROOT="$4" 
+            ;;
+            "$4")
+                export ROOT="$5" 
+            ;;
+            "$5")
+                export ROOT="$6"
+            ;;
+            *)
+                export ROOT="/" 
+            ;;
+        esac 
+        chkdeps "$@"
+        deps="$(echo "$deps" | tr ' ' '\n' | sort -u | xargs)"
+        if [ "$3" != "-y" ] && [ "$4" != "-y" ]; then
+            printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$2"
+            read -r yn
+        else
+            printf "Packages: %s %s\n" "$deps" "$2"
+        fi
+        if [ "$yn" = "y" ] || [ "$yn" = "Y" ] || [ "$3" = "-y" ] || [ "$4" = "-y" ]; then
+            if [ "$deps" != "" ]; then
+                for word in $deps; do
+                    [ ! -d "$ROOT/$INSTALLED_DIR/$word" ] && install_binaries "$word" -r "$(realpath $ROOT)" 
+                done
+            else
+                echo "nyaa: dependencies already installed, continuing"
+            fi
+            install_binaries "$2" "$3" "$4" "$5" "$6" || err "nyaa: an error occured during installation"
+        else    
+            echo "nyaa: exiting."
+            exit 0
+        fi
+    ;;
+    "I")
+        get_info "$2"
+    ;;
+    "r")
+        # -r flag is for setting the ROOTFS variable.
+        # This checks where the -r flag is (or isn't) and sets the variables accordingly
+        # shellcheck disable=SC2194
+        case "-r" in
+            "$3")
+                export ROOT="$4" 
+            ;;
+            "$4")
+                export ROOT="$5" 
+            ;;
+            "$5")
+                export ROOT="$6"
+            ;;
+            *)
+                export ROOT="/" 
+            ;;
+        esac 
+        remove_packages "$2"
+    ;;
+    "u")
+        update_packages
+    ;;
+    "U")
+        upgrade_packages "$2"
+    ;;
+    "v")
+        printf "${BLUE}nyaa${NC} ${GREEN}%s${NC}
+Copyright (C) 2022 Kreato Linux
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+" "$VERSION"
+    ;;
+    *)
+        printf "run 'nyaa h' for help\n"
+        ;;
+esac
