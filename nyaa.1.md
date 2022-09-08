@@ -17,7 +17,7 @@ Nyaa uses simple build scripts similar to PKGBUILDs found in the pacman package 
     build package
 
 **m**
-    nyaa_modules(8)
+    Use modules, see nyaa_modules(8)
 
 **s**
     search packages
