@@ -54,6 +54,10 @@ defvalues
 [ -f "$CONF" ] && . $CONF # Source the configuration file if it exists
 
 down() {
+    if [ "$INTERNAL_USE" = "" ] && [ -z "$INTERNAL_USE" ]; then
+        echo "nyaa: warn: using down externally is not supported anymore, please update to SOURCES"
+    fi
+
     if [ "$1" != "" ];
     then
         case $DOWNLOADER in
@@ -129,6 +133,17 @@ build_package() {
 
     # Building the package and making it into a nice tarball
     cd "$SRCDIR" || err "nyaa: $SRCDIR folder for some reason couldn't get created, please check permissions"
+    
+    for i in "$(echo $SOURCES | cut -d ';' -f 1)"
+    do
+        INTERNAL_USE=1 down "$i"
+    done
+    
+    for s in "$(echo $SHA256SUM | cut -d ';' -f 1)"
+    do
+        echo "$s" | sha256sum -c || err "nyaa: sha256sum -c exited with $?"
+    done
+
     build
     cd "$ROOT" || err "nyaa: $ROOT folder for some reason couldn't get created, please check permissions"
     installpkg 2> /dev/null || echo "nyaa: installpkg function not found, skipping"
