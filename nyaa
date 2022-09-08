@@ -146,7 +146,6 @@ build_package() {
 
     build
     cd "$ROOT" || err "nyaa: $ROOT folder for some reason couldn't get created, please check permissions"
-    installpkg 2> /dev/null || echo "nyaa: installpkg function not found, skipping"
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
     tar -czvf /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz ./*
     unset ROOT
