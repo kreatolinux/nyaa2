@@ -4,16 +4,13 @@
 nyaa modules - module system for nyaa
 
 # SYNOPSIS
-nyaa m [l] [i] [MODULE NAME]
+nyaa m [l] [MODULE NAME]
 
 # DESCRIPTION
 nyaa modules is a module system that allows you to extend the capabilities of nyaa without modifying the main code and/or without forking it.
 
 **l**
     List modules
-
-**i**
-    Install modules
 
 # MODULE STRUCTURE
 **We highly recommend looking at nyaa's module() function as there might be breaking changes**

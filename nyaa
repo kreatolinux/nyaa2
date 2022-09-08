@@ -35,7 +35,7 @@ defvalues() {
     export REPO_PATH="/etc/nyaa"
     export DOWNLOADER="wget"
     export MIRROR_PATH="https://mirror.kreato.dev"
-    export MODULE_PATH="/home/kreato/test_modules"
+    export MODULE_PATH="/etc/nyaa.modules"
 }
 
 # Make required folders if they dont exist
@@ -446,7 +446,6 @@ ${BLUE}->${NC} v display version
             else
                 printf "nyaa modules %s
 ${BLUE}->${NC} l list modules
-${BLUE}->${NC} i install modules
 You can run 'nyaa m <modulename>' to run the module directly.
 " "$VERSION"
             fi
