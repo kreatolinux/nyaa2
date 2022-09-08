@@ -141,7 +141,15 @@ build_package() {
     
     for s in "$(echo $SHA256SUM | cut -d ';' -f 1)"
     do
-        echo "$s" | sha256sum -c || err "nyaa: sha256sum -c exited with $?"
+        if [ "$s" = "SKIP" ]; then
+            if [ "$SHA256SUM_SKIPS" = "1" ]; then
+                echo "nyaa: warn: sha256sum skipped"
+            else
+                err "nyaa: sha256sum skips are disabled"
+            fi
+        else
+            echo "$s" | sha256sum -c || err "nyaa: sha256sum -c exited with $?"
+        fi
     done
 
     build
