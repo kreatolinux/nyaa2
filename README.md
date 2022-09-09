@@ -8,7 +8,7 @@
 `nyaa` is heavily inspired by the `kiss` package manager.
 
 # Installation
-Installation is done by choosing to install the `nyaa` package manager on `nyaa-src`.
+Installation is done by choosing to install the `nyaa` package manager on `nyaastrap`.
 
 Alternatively, installation can be done on any Linux system by putting the `nyaa` file to PATH.
 Please be warned that you will not have support in any way if you do this.
