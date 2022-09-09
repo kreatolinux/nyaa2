@@ -1,5 +1,6 @@
-<p align="center">
-<img src="https://github.com/Kreato-Linux/logo/blob/master/withtext.png">
+<p align="left">
+<img src="https://github.com/Kreato-Linux/logo/blob/master/withtext.png"> 
+  <img src="https://github.com/Kreato-Linux/logo/blob/master/pkg.png" height="10%" width="10%">
 </p>
 
 # nyaa
