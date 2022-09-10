@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Kreato Linux.  If not, see <https://www.gnu.org/licenses/>.
-VERSION="v1.7a"
+VERSION="v1.7b"
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
@@ -133,25 +133,26 @@ build_package() {
 
     # Building the package and making it into a nice tarball
     cd "$SRCDIR" || err "nyaa: $SRCDIR folder for some reason couldn't get created, please check permissions"
-    
-    for i in $(echo "$SOURCES" | cut -d ';' -f 1)
+   
+    echo "$SOURCES" | cut -d ';' -f 1 | while read -r line
     do
-        INTERNAL_USE=1 down "$i"
+        echo "$line"
+        INTERNAL_USE=1 down "$line"
     done
     
-    for s in $(echo "$SHA256SUM" | cut -d ';' -f 1)
+    echo "$SHA256SUM" | cut -d ';' -f 1 | while read -r line
     do
-        if [ "$s" = "SKIP" ]; then
+         if [ "$line" = "SKIP" ]; then 
             if [ "$SHA256SUM_SKIPS" = "1" ]; then
                 echo "nyaa: warn: sha256sum skipped"
             else
                 err "nyaa: sha256sum skips are disabled"
             fi
         else
-            echo "$s" | sha256sum -c || err "nyaa: sha256sum -c exited with $?"
+            echo "$line"
+            echo "$line" | sha256sum -c || err "nyaa: sha256sum -c exited with $?"
         fi
     done
-
     build
     cd "$ROOT" || err "nyaa: $ROOT folder for some reason couldn't get created, please check permissions"
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
