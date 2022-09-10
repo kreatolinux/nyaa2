@@ -134,12 +134,12 @@ build_package() {
     # Building the package and making it into a nice tarball
     cd "$SRCDIR" || err "nyaa: $SRCDIR folder for some reason couldn't get created, please check permissions"
     
-    for i in "$(echo $SOURCES | cut -d ';' -f 1)"
+    for i in $(echo "$SOURCES" | cut -d ';' -f 1)
     do
         INTERNAL_USE=1 down "$i"
     done
     
-    for s in "$(echo $SHA256SUM | cut -d ';' -f 1)"
+    for s in $(echo "$SHA256SUM" | cut -d ';' -f 1)
     do
         if [ "$s" = "SKIP" ]; then
             if [ "$SHA256SUM_SKIPS" = "1" ]; then
