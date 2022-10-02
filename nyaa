@@ -30,6 +30,10 @@ chkroot() {
      fi
  }
 
+version() {
+    echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; # From https://stackoverflow.com/a/37939589
+}
+
 # Default values if config file does not exist
 defvalues() {
     export REPO_PATH="/etc/nyaa"
@@ -391,7 +395,7 @@ upgrade_packages() {
     #shellcheck source=/dev/null
     . "$REPO_DIR/$w"/run
 	REPO_VERSION=$VERSION
-	if [ ! "$LOCAL_VERSION" = "$REPO_VERSION" ]
+    if [ "$(version $LOCAL_VERSION)" -lt "$(version $REPO_VERSION)" ]
         then
             echo "nyaa: upgrading $w"
             echo "nyaa: new version of $w: $REPO_VERSION"
