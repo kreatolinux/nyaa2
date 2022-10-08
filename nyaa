@@ -189,8 +189,9 @@ install_package() {
     # Install tarball 
     add_repo_dir "$1"
     if [ ! "$ROOT" = "" ]; then
-        cd "$ROOT" || err "nyaa: unknown error" 
+        cd /etc/nyaa.tarballs || err "nyaa: unknown error (check permissions)" 
         sha256sum -c "$2.sum" || err "nyaa: checksum failed"
+        cd "$ROOT" || err "nyaa: unknown error" 
         tar -hxvf "$2" > /tmp/"$1".log
         [ ! -d "$ROOT/$INSTALLED_DIR/$1" ] && mkdir -p "$ROOT/$INSTALLED_DIR/$1"
         cp -rf "$REPO_DIR/$1/"* "$ROOT/$INSTALLED_DIR/$1"
