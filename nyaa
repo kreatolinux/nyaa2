@@ -476,6 +476,7 @@ You can run 'nyaa m <modulename>' to run the module directly.
             ;;
         esac 
         
+        IS_BUILDED=y dep_handler "$@"
         chk_build_deps "$@"
         deps="$(echo "$deps $bdeps" | tr ' ' '\n' | sort -u | xargs)"
         if [ "$3" != "-y" ] && [ "$4" != "-y" ] && [ "$3" != "-n" ] && [ "$4" != "-n" ]; then
