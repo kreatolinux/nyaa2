@@ -150,7 +150,7 @@ build_package() {
             if [ "$SHA256SUM_SKIPS" = "1" ]; then
                 echo "nyaa: warn: sha256sum skipped"
             else
-                err "nyaa: sha256sum skips are disabled"
+                err "nyaa: sha256sum skips are disabled, cannot skip"
             fi
         else
             echo "$line"
@@ -161,6 +161,8 @@ build_package() {
     cd "$ROOT" || err "nyaa: $ROOT folder for some reason couldn't get created, please check permissions"
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
     tar -czvf /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz ./*
+    cd /etc/nyaa.tarballs || err "nyaa: an error occured (check permissions)"
+    sha256sum nyaa-tarball-"$1"-"$VERSION".tar.gz > nyaa-tarball-"$1"-"$VERSION".tar.gz.sum
     unset ROOT
     
     # Installing packaged tarball
@@ -188,6 +190,7 @@ install_package() {
     add_repo_dir "$1"
     if [ ! "$ROOT" = "" ]; then
         cd "$ROOT" || err "nyaa: unknown error" 
+        sha256sum -c "$2.sum" || err "nyaa: checksum failed"
         tar -hxvf "$2" > /tmp/"$1".log
         [ ! -d "$ROOT/$INSTALLED_DIR/$1" ] && mkdir -p "$ROOT/$INSTALLED_DIR/$1"
         cp -rf "$REPO_DIR/$1/"* "$ROOT/$INSTALLED_DIR/$1"
@@ -210,12 +213,19 @@ install_binaries() {
     . "$REPO_DIR"/"$1"/run
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
     TARBALL="nyaa-tarball-$1-$VERSION.tar.gz"
+    CHKSUM="$TARBALL.sum"
     cd /etc/nyaa.tarballs || err "nyaa: an error occured"
 
     for i in $(echo $MIRROR_PATH | tr ";" "\n")
     do
+        if [ ! -f "/etc/nyaa.tarballs/$CHKSUM" ]; then
+            INTERNAL_USE=1 down "$i"/"$CHKSUM" || err "nyaa: chksum download failed with error"
+        else
+            break
+        fi
+
         if [ ! -f "/etc/nyaa.tarballs/$TARBALL" ]; then
-            down "$i"/nyaa-tarball-"$1"-"$VERSION".tar.gz || err "download failed with error"
+            INTERNAL_USE=1 down "$i"/"$TARBALL" || err "nyaa: tarball download failed with error"
         else
             break
         fi
