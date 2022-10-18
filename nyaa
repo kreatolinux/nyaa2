@@ -138,13 +138,13 @@ build_package() {
     # Building the package and making it into a nice tarball
     cd "$SRCDIR" || err "nyaa: $SRCDIR folder for some reason couldn't get created, please check permissions"
    
-    echo "$SOURCES" | cut -d ';' -f 1 | while read -r line
+    echo "$SOURCES" | tr ';' '\n' | while read -r line
     do
         echo "$line"
         INTERNAL_USE=1 down "$line"
     done
     
-    echo "$SHA256SUM" | cut -d ';' -f 1 | while read -r line
+    echo "$SHA256SUM" | tr ';' '\n' | while read -r line
     do
          if [ "$line" = "SKIP" ]; then 
             if [ "$SHA256SUM_SKIPS" = "1" ]; then
@@ -265,7 +265,7 @@ chkdeps() {
     for cLine in $(cat "$REPO_DIR/$2/deps" 2> /dev/null)
     do
     if [ ! -d "$ROOT/$INSTALLED_DIR/$2" ]; then
-        deps="$deps $cLine"
+        deps="$cLine $deps"
         if [ -n "$IS_BUILDED" ]; then
             chk_build_deps "" "$cLine"  
             IS_BUILDED=y dep_handler "" "$cLine"
@@ -283,7 +283,7 @@ chk_build_deps() {
     for dLine in $(cat "$REPO_DIR/$2/build_deps" 2> /dev/null)
     do
     if [ ! -d "$ROOT/$INSTALLED_DIR/$2" ]; then
-        bdeps="$bdeps $dLine"
+        bdeps="$dLine $bdeps"
         IS_BUILDED=y chkdeps "" "$dLine"
     fi     
     done
@@ -302,7 +302,7 @@ dep_handler() {
             # shellcheck disable=SC2013
             for Line in $(cat "$REPO_DIR/$2/deps" 2> /dev/null)	
             do
-                deps="$deps $Line"
+                deps="$Line $deps"
                 if [ -n "$IS_BUILDED" ]; then
                     chk_build_deps "" "$Line" 
                     IS_BUILDED=y chkdeps "" "$Line"
@@ -487,9 +487,9 @@ You can run 'nyaa m <modulename>' to run the module directly.
             ;;
         esac 
         
-        IS_BUILDED=y dep_handler "$@"
+        IS_BUILDED=y chkdeps "$@" 
         chk_build_deps "$@"
-        deps="$(echo "$deps $bdeps" | tr ' ' '\n' | sort -u | xargs)"
+        deps="$(echo "$bdeps $deps" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
         if [ "$3" != "-y" ] && [ "$4" != "-y" ] && [ "$3" != "-n" ] && [ "$4" != "-n" ]; then
             printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$2"
             read -r yn
@@ -536,7 +536,7 @@ You can run 'nyaa m <modulename>' to run the module directly.
             ;;
         esac 
         chkdeps "$@"
-        deps="$(echo "$deps" | tr ' ' '\n' | sort -u | xargs)"
+        deps="$(echo "$deps" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
         if [ "$3" != "-y" ] && [ "$4" != "-y" ]; then
             printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$2"
             read -r yn
