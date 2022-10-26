@@ -384,7 +384,7 @@ remove_packages() {
 # A basic git pull and a check to see if the repositories actually exist.
 update_packages() {
     chkroot
-    [ ! -d "$MAIN_REPO_DIR" ] && git clone https://kreato.dev/kreato-linux/nyaa-repo $MAIN_REPO_DIR
+    [ ! -d "$MAIN_REPO_DIR" ] && git clone https://github.com/kreatolinux/nyaa-repo $MAIN_REPO_DIR
     for i in $(echo $REPO_PATH | tr ";" "\n")
     do
     cd "$i" || err "nyaa: couldn't cd onto $i, exiting"
