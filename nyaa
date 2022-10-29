@@ -23,6 +23,7 @@ NC='\033[0m'
 CONF="/etc/nyaa.conf"
 INSTALLED_DIR="/etc/nyaa.installed/"
 MAIN_REPO_DIR="/etc/nyaa"
+MAIN_BIN_REPO_DIR="/etc/nyaa-bin"
 # Root checker
 chkroot() {
      if [ "$(id -u)" != "0" ]; then
@@ -36,7 +37,7 @@ version() {
 
 # Default values if config file does not exist
 defvalues() {
-    export REPO_PATH="/etc/nyaa"
+    export REPO_PATH="/etc/nyaa;/etc/nyaa-bin"
     export DOWNLOADER="wget"
     export MIRROR_PATH="https://mirror.kreato.dev"
     export MODULE_PATH="/etc/nyaa.modules"
@@ -135,6 +136,9 @@ build_package() {
     # shellcheck source=/dev/null
     . "$REPO_DIR"/"$1"/run
 
+    # Checking if the package is a binary package or not
+    [ "$IS_BINARY" = "y" ] && err "nyaa: this package is a binary package, install through 'nyaa i $1'"
+    
     # Building the package and making it into a nice tarball
     cd "$SRCDIR" || err "nyaa: $SRCDIR folder for some reason couldn't get created, please check permissions"
    
@@ -209,9 +213,9 @@ install_package() {
 # A feature long-waited, shipped with nyaa v1.4
 install_binaries() {
     chkroot
-    add_repo_dir "$1"
+    add_repo_dir "$1-bin"
     #shellcheck source=/dev/null
-    . "$REPO_DIR"/"$1"/run
+    . "$REPO_DIR"/"$1-bin"/run
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
     TARBALL="nyaa-tarball-$1-$VERSION.tar.gz"
     CHKSUM="$TARBALL.sum"
@@ -255,8 +259,8 @@ install_binaries() {
 # Dependency Handler
 #
 
-# Dependency handler consists of 3 seperate functions that call each other. 
-# These functions are named `chkdeps`, `chk_build_deps` and `dep_handler` as you can see below. 
+# Dependency handler consists of 2 seperate functions that call each other. 
+# These functions are named `chkdeps`, `dep_handler` as you can see below. 
 # This allows us to make a complete loop that doesnt exit until dependencies are in the `deps` (and `bdeps` if the package is built) environment variable.
 
 chkdeps() {
@@ -266,26 +270,8 @@ chkdeps() {
     do
     if [ ! -d "$ROOT/$INSTALLED_DIR/$2" ]; then
         deps="$cLine $deps"
-        if [ -n "$IS_BUILDED" ]; then
-            chk_build_deps "" "$cLine"  
-            IS_BUILDED=y dep_handler "" "$cLine"
-        else
-            dep_handler "" "$cLine"
-        fi
+        dep_handler "" "$cLine"
     fi
-    done
-}
-
-chk_build_deps() {
-    add_repo_dir "$2"
-    [ ! -f "$REPO_DIR/$2/build_deps" ] && chkdeps "" "$2" 
-    # shellcheck disable=SC2013
-    for dLine in $(cat "$REPO_DIR/$2/build_deps" 2> /dev/null)
-    do
-    if [ ! -d "$ROOT/$INSTALLED_DIR/$2" ]; then
-        bdeps="$dLine $bdeps"
-        IS_BUILDED=y chkdeps "" "$dLine"
-    fi     
     done
 }
 
@@ -303,12 +289,7 @@ dep_handler() {
             for Line in $(cat "$REPO_DIR/$2/deps" 2> /dev/null)	
             do
                 deps="$Line $deps"
-                if [ -n "$IS_BUILDED" ]; then
-                    chk_build_deps "" "$Line" 
-                    IS_BUILDED=y chkdeps "" "$Line"
-                else
-                    chkdeps "" "$Line"
-                fi
+                chkdeps "" "$Line"
             done
         fi
     fi
@@ -385,6 +366,7 @@ remove_packages() {
 update_packages() {
     chkroot
     [ ! -d "$MAIN_REPO_DIR" ] && git clone https://github.com/kreatolinux/nyaa-repo $MAIN_REPO_DIR
+    [ ! -d "$MAIN_BIN_REPO_DIR" ] && git clone https://github.com/kreatolinux/nyaa-repo-bin $MAIN_BIN_REPO_DIR
     for i in $(echo $REPO_PATH | tr ";" "\n")
     do
     cd "$i" || err "nyaa: couldn't cd onto $i, exiting"
@@ -487,8 +469,7 @@ You can run 'nyaa m <modulename>' to run the module directly.
             ;;
         esac 
         
-        IS_BUILDED=y chkdeps "$@" 
-        chk_build_deps "$@"
+        chkdeps "$@" 
         deps="$(echo "$bdeps $deps" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
         if [ "$3" != "-y" ] && [ "$4" != "-y" ] && [ "$3" != "-n" ] && [ "$4" != "-n" ]; then
             printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$2"
