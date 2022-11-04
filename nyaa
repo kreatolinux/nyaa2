@@ -470,7 +470,7 @@ You can run 'nyaa m <modulename>' to run the module directly.
         esac 
         
         chkdeps "$@" 
-        deps="$(echo "$bdeps $deps" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
+        deps="$(echo "$deps" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
         if [ "$3" != "-y" ] && [ "$4" != "-y" ] && [ "$3" != "-n" ] && [ "$4" != "-n" ]; then
             printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$2"
             read -r yn
