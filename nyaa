@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Kreato Linux.  If not, see <https://www.gnu.org/licenses/>.
-VERSION="v1.8a"
+VERSION="v1.9"
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
