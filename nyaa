@@ -122,7 +122,7 @@ build_package() {
     export SRCDIR=/tmp/nyaa_srcdir
     export DESTDIR="$ROOT"
     
-    [ ! -f "/tmp/nyaa.lock" ] && err "nyaa: lockfile exists, will not proceed"    
+    [ -f "/tmp/nyaa.lock" ] && err "nyaa: lockfile exists, will not proceed"    
     touch /tmp/nyaa.lock || err "nyaa: couldnt create lockfile, please check permissions"  
 
     # Removing the folders if they exist already
