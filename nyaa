@@ -161,7 +161,7 @@ build_package() {
             echo "$line" | sha256sum -c || err "nyaa: sha256sum -c exited with $?"
         fi
     done
-    build
+    build || err "nyaa: build failed"
     cd "$ROOT" || err "nyaa: $ROOT folder for some reason couldn't get created, please check permissions"
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
     tar -czvf /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz ./*
