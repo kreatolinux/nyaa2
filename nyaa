@@ -456,6 +456,11 @@ You can run 'nyaa m <modulename>' to run the module directly.
         esac
     ;;
     "b")
+        
+        packages="$(echo $@ | sed '1s/^.//;s/-y//' | cut -f1 -d'-r')"
+        
+        [ "$packages" = "" ] && err "nyaa: please enter a package name"
+
         # -r flag is for setting the ROOTFS variable.
         # This checks where the -r flag is (or isn't) and sets the variables accordingly
         #shellcheck disable=SC2194
@@ -474,10 +479,19 @@ You can run 'nyaa m <modulename>' to run the module directly.
             ;;
         esac 
         
-        chkdeps "$@" 
-        deps="$(echo "$deps" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
-        if [ "$3" != "-y" ] && [ "$4" != "-y" ] && [ "$3" != "-n" ] && [ "$4" != "-n" ]; then
-            printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$2"
+        for i in $packages
+	do	
+		dep_handler "" "$i"
+        	deps="$(echo "$deps" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
+	done
+	
+	for i in $deps
+	do
+		packages="$(echo $packages | sed s/$i//g)"
+	done
+
+	if [ "$3" != "-y" ] && [ "$4" != "-y" ] && [ "$3" != "-n" ] && [ "$4" != "-n" ]; then
+            printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$packages"
             read -r yn
         else
             printf "Packages: %s %s\n" "$deps" "$2"
@@ -497,13 +511,23 @@ You can run 'nyaa m <modulename>' to run the module directly.
             else
                 echo "nyaa: dependencies already installed, continuing"
             fi
-            build_package "$2" "$3" "$4" "$5" "$6" || err "nyaa: an error occured during compilation"
+
+	    for i in $packages
+	    do
+		build_package "$i" "$3" "$4" "$5" "$6" || err "nyaa: an error occured during compilation"
+	    done
+	
         else    
             echo "nyaa: exiting."
             exit 0
         fi
     ;;
     "i")
+
+	packages="$(echo $@ | sed '1s/^.//;s/-y//' | cut -f1 -d'-r')"                    
+                                                                       
+        [ "$packages" = "" ] && err "nyaa: please enter a package name"    
+
         # -r flag is for setting the ROOTFS variable.
         # This checks where the -r flag is (or isn't) and sets the variables accordingly
         # shellcheck disable=SC2194
@@ -521,10 +545,20 @@ You can run 'nyaa m <modulename>' to run the module directly.
                 export ROOT="/" 
             ;;
         esac 
-        chkdeps "$@"
-        deps="$(echo "$deps" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
-        if [ "$3" != "-y" ] && [ "$4" != "-y" ]; then
-            printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$2"
+        
+	for i in $packages                                                                                               
+        do                                                                                                               
+                dep_handler "" "$i"                                                                                      
+                deps="$(echo "$deps" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"                                            
+        done                                                                                                             
+                                                                                                                         
+        for i in $deps                                                                                                   
+        do                                                                                                               
+                packages="$(echo $packages | sed s/$i//g)"                                                               
+        done         
+	
+	if [ "$3" != "-y" ] && [ "$4" != "-y" ]; then
+            printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$packages"
             read -r yn
         else
             printf "Packages: %s %s\n" "$deps" "$2"
@@ -537,7 +571,11 @@ You can run 'nyaa m <modulename>' to run the module directly.
             else
                 echo "nyaa: dependencies already installed, continuing"
             fi
-            install_binaries "$2" "$3" "$4" "$5" "$6" || err "nyaa: an error occured during installation"
+            for i in $packages
+            do  
+		echo "$i"                                                   
+                install_binaries "$i" "$3" "$4" "$5" "$6" || err "nyaa: an error occured during installation"                
+            done   
         else    
             echo "nyaa: exiting."
             exit 0
