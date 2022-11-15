@@ -347,23 +347,26 @@ module_list() {
 # Basically removes everything in the list_files file of the package.
 remove_packages() {
     chkroot
-    [ ! -f "$ROOT/$INSTALLED_DIR/$1/list_files" ] && echo "nyaa: package $1 is not installed" && exit 1
-    #shellcheck source=/dev/null
-    . "$INSTALLED_DIR/$1/run"
-    if ! command -v custom_uninstall >/dev/null 2>&1
-    then
-        while read -r file; do 
-	        rm -f "${ROOT:?}/${file:?}" 2>/dev/null
-	        if [ -z "$(ls -A "${ROOT:?}/$file" 2>/dev/null)" ]
-	        then
-		        rm -rf "${ROOT:?}/${file:?}" 2>/dev/null
-	        fi
-        done < "${ROOT:?}/$INSTALLED_DIR/$1/list_files"
-        rm -rf "${ROOT:?}/${INSTALLED_DIR:?}/${1:?}/"
-    else
-        custom_uninstall || echo "custom_uninstall script failed"
-        exit
-    fi
+    packages="$(echo $@ | sed '1s/^.//')"
+    for i in $packages
+    do
+    	[ ! -f "$ROOT/$INSTALLED_DIR/$i/list_files" ] && err "nyaa: package $i is not installed"
+    	#shellcheck source=/dev/null
+    	. "$INSTALLED_DIR/$i/run"
+    	if ! command -v custom_uninstall >/dev/null 2>&1
+    	then
+        	while read -r file; do 
+	        	rm -f "${ROOT:?}/${file:?}" 2>/dev/null
+	        	if [ -z "$(ls -A "${ROOT:?}/$file" 2>/dev/null)" ]
+	        	then
+		        	rm -rf "${ROOT:?}/${file:?}" 2>/dev/null
+	        	fi
+        	done < "${ROOT:?}/$INSTALLED_DIR/$i/list_files"
+        	rm -rf "${ROOT:?}/${INSTALLED_DIR:?}/${i:?}/"
+    	else
+        	custom_uninstall || err "custom_uninstall script failed"
+    	fi
+    done
 }
 
 # Update repositories 
@@ -573,7 +576,6 @@ You can run 'nyaa m <modulename>' to run the module directly.
             fi
             for i in $packages
             do  
-		echo "$i"                                                   
                 install_binaries "$i" "$3" "$4" "$5" "$6" || err "nyaa: an error occured during installation"                
             done   
         else    
@@ -602,7 +604,7 @@ You can run 'nyaa m <modulename>' to run the module directly.
                 export ROOT="/" 
             ;;
         esac 
-        remove_packages "$2"
+        remove_packages "$@"
     ;;
     "u")
         update_packages
