@@ -122,14 +122,17 @@ build_package() {
     export SRCDIR=/tmp/nyaa_srcdir
     export DESTDIR="$ROOT"
     
+    [ ! -f "/tmp/nyaa.lock" ] && err "nyaa: lockfile exists, will not proceed"    
+    touch /tmp/nyaa.lock || err "nyaa: couldnt create lockfile, please check permissions"  
+
     # Removing the folders if they exist already
     [ -d "$SRCDIR" ] && rm -rf $SRCDIR
     [ -d "$ROOT" ] && rm -rf $ROOT
 
     # Making the folders again
     mkdir -p $ROOT
-    mkdir -p $SRCDIR
-   
+    mkdir -p $SRCDIR   
+ 
     add_repo_dir "$1"
 
     # Sourcing the package runfile
@@ -157,7 +160,7 @@ build_package() {
                 err "nyaa: sha256sum skips are disabled, cannot skip"
             fi
         else
-            echo "$line"
+	    echo "$line"
             echo "$line" | sha256sum -c || err "nyaa: sha256sum -c exited with $?"
         fi
     done
@@ -187,6 +190,8 @@ build_package() {
                 ;;
         esac
     fi
+    
+    [ -f "/tmp/nyaa.lock" ] && rm -f /tmp/nyaa.lock || err "nyaa: couldn't remove lockfile, please check permissions"
 } 
 
 install_package() {
