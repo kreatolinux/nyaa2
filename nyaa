@@ -129,6 +129,8 @@ build_package() {
     
     [ -f "/tmp/nyaa.lock" ] && err -n "nyaa: lockfile exists, will not proceed"    
     touch /tmp/nyaa.lock || err "nyaa: couldnt create lockfile, please check permissions"  
+    
+    trap "rm -f /tmp/nyaa.lock ; trap - EXIT;exit" EXIT INT HUP
 
     # Removing the folders if they exist already
     [ -d "$SRCDIR" ] && rm -rf $SRCDIR
