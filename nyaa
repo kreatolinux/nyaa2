@@ -84,6 +84,7 @@ down() {
 
 err() {
     printf "%s\n" "$1"
+    [ -f "/tmp/nyaa.lock" ] && rm -f /tmp/nyaa.lock
     exit 1
 }
 
