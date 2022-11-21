@@ -83,8 +83,11 @@ down() {
 }
 
 err() {
-    printf "%s\n" "$1"
-    [ -f "/tmp/nyaa.lock" ] && rm -f /tmp/nyaa.lock
+    printf "%s\n" "$2"
+    if [ "$1" != "-n" ] && [ -f "/tmp/nyaa.lock" ]; then
+	 printf "nyaa: removing lockfile\n"
+         rm -f /tmp/nyaa.lock
+    fi
     exit 1
 }
 
@@ -124,7 +127,7 @@ build_package() {
     export SRCDIR=/tmp/nyaa_srcdir
     export DESTDIR="$ROOT"
     
-    [ -f "/tmp/nyaa.lock" ] && err "nyaa: lockfile exists, will not proceed"    
+    [ -f "/tmp/nyaa.lock" ] && err -n "nyaa: lockfile exists, will not proceed"    
     touch /tmp/nyaa.lock || err "nyaa: couldnt create lockfile, please check permissions"  
 
     # Removing the folders if they exist already
