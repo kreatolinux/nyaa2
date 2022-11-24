@@ -83,10 +83,12 @@ down() {
 }
 
 err() {
-    if [ "$1" != "-n" ] && [ -f "/tmp/nyaa.lock" ]; then
+    if [ "$1" != "-n" ]; then
     	 printf "%s\n" "$1"
-	 printf "nyaa: removing lockfile\n"
-         rm -f /tmp/nyaa.lock
+         if [ -f "/tmp/nyaa.lock" ]; then
+	 	printf "nyaa: removing lockfile\n"
+         	rm -f /tmp/nyaa.lock
+	 fi
     else
 	printf "%s\n" "$2"
     fi
