@@ -471,7 +471,7 @@ You can run 'nyaa m <modulename>' to run the module directly.
     ;;
     "b")
         
-        packages="$(echo $@ | sed '1s/^.//;s/-y//' | cut -f1 -d'-r')"
+        packages="$(echo $@ | sed '1s/^.//;s/-y//;s/^[^-r]*-r//')" # Get rid of flags and stuff like `b`, `-y`, `-r`, etc.
         
         [ "$packages" = "" ] && err "nyaa: please enter a package name"
 
