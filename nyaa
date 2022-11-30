@@ -202,8 +202,9 @@ build_package() {
         esac
     fi
     
-    [ -f "/tmp/nyaa.lock" ] && rm -f /tmp/nyaa.lock || err "nyaa: couldn't remove lockfile, please check permissions"
-} 
+    rm -f /tmp/nyaa.lock
+    [ -f "/tmp/nyaa.lock" ] && err "nyaa: couldn't remove lockfile, please check permissions"
+}
 
 install_package() {
     # Install tarball 
