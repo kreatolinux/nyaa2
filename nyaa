@@ -202,8 +202,7 @@ build_package() {
         esac
     fi
     
-    rm -f /tmp/nyaa.lock
-    [ -f "/tmp/nyaa.lock" ] && err "nyaa: couldn't remove lockfile, please check permissions"
+    rm -f /tmp/nyaa.lock || err "nyaa: couldn't remove lockfile, please check permissions"
 }
 
 install_package() {
