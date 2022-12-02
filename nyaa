@@ -178,9 +178,9 @@ build_package() {
     build || err "nyaa: build failed"
     cd "$ROOT" || err "nyaa: $ROOT folder for some reason couldn't get created, please check permissions"
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
-    tar -czvf /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz ./*
+    tar -czvf /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION"-"$RELEASE".tar.gz ./*
     cd /etc/nyaa.tarballs || err "nyaa: an error occured (check permissions)"
-    sha256sum nyaa-tarball-"$1"-"$VERSION".tar.gz > nyaa-tarball-"$1"-"$VERSION".tar.gz.sum
+    sha256sum nyaa-tarball-"$1"-"$VERSION"-"$RELEASE".tar.gz > nyaa-tarball-"$1"-"$VERSION"-"$RELEASE".tar.gz.sum
     unset ROOT
     
     # Installing packaged tarball
@@ -189,15 +189,15 @@ build_package() {
         case "-r" in
             "$3")
                 export ROOT="$4"
-                ROOT="$4" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz
+                ROOT="$4" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION"-"$RELEASE".tar.gz
                 ;;
             "$2")
                 export ROOT="$3"
-                ROOT="$3" install_package "$1" "/etc/nyaa.tarballs/nyaa-tarball-$1-$VERSION.tar.gz"
+                ROOT="$3" install_package "$1" "/etc/nyaa.tarballs/nyaa-tarball-$1-$VERSION-$RELEASE.tar.gz"
                 ;;
             *)
                 export ROOT="/"
-                ROOT="/" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz
+                ROOT="/" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION"-"$RELEASE".tar.gz
                 ;;
         esac
     fi
@@ -233,7 +233,7 @@ install_binaries() {
     #shellcheck source=/dev/null
     . "$REPO_DIR"/"$1-bin"/run
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
-    TARBALL="nyaa-tarball-$1-$VERSION.tar.gz"
+    TARBALL="nyaa-tarball-$1-$VERSION-$RELEASE.tar.gz"
     CHKSUM="$TARBALL.sum"
     cd /etc/nyaa.tarballs || err "nyaa: an error occured"
 
@@ -256,15 +256,15 @@ install_binaries() {
     case "-r" in
         "$3")
             export ROOT="$4"
-            ROOT="$4" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz
+            ROOT="$4" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION"-"$RELEASE".tar.gz
             ;;
         "$2")
             export ROOT="$3"
-            ROOT="$3" install_package "$1" "/etc/nyaa.tarballs/nyaa-tarball-$1-$VERSION.tar.gz"
+            ROOT="$3" install_package "$1" "/etc/nyaa.tarballs/nyaa-tarball-$1-$VERSION-$RELEASE.tar.gz"
             ;;
         *)
             export ROOT="/"
-            ROOT="/" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION".tar.gz
+            ROOT="/" install_package "$1" /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION"-"$RELEASE".tar.gz
             ;;
     esac
 }
@@ -403,14 +403,16 @@ upgrade_packages() {
         # shellcheck source=/dev/null
         . "$INSTALLED_DIR/$w"/run
 	LOCAL_VERSION=$VERSION
+	LOCAL_RELEASE=$RELEASE
 	add_repo_dir "$w"
     #shellcheck source=/dev/null
     . "$REPO_DIR/$w"/run
 	REPO_VERSION=$VERSION
-    if [ "$(version $LOCAL_VERSION)" -lt "$(version $REPO_VERSION)" ]
+	REPO_RELEASE=$RELEASE
+    if [ "$(version $LOCAL_VERSION)" -lt "$(version $REPO_VERSION)" ] || [ "$(version $LOCAL_RELEASE)" -lt "$(version $REPO_RELEASE)" ]
         then
             echo "nyaa: upgrading $w"
-            echo "nyaa: new version of $w: $REPO_VERSION"
+            echo "nyaa: new version of $w: $REPO_VERSION $REPO_RELEASE"
             if [ "$1" = "-b" ]; then
                 build_package "$w"
             else
@@ -431,6 +433,7 @@ get_info() {
     echo "package name: $NAME"
     echo "package desc: $DESCRIPTION"
     echo "package ver:  $VERSION"
+    echo "package rel:  $RELEASE"
     echo "is installed: $ISINSTALLED"
 }
 
