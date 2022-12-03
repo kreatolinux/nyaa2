@@ -40,7 +40,6 @@ defvalues() {
     export REPO_PATH="/etc/nyaa;/etc/nyaa-bin"
     export DOWNLOADER="wget"
     export MIRROR_PATH="https://mirror.kreato.dev"
-    export MODULE_PATH="/etc/nyaa.modules"
     export CC="gcc"
 }
 
@@ -311,49 +310,6 @@ dep_handler() {
     fi
 }
 
-#
-# Module Support
-#
-
-# Came with nyaa v1.7. Allows you to use modules to extend the package manager without modifying its code manually.
-module() {
-    # Variables:
-    # MODULE_NAME
-    # MODULE_VER
-    # MODULE_DESC
-    # required functions;
-    # main()
-    # help()
-    # version()
-    MODULE_ACTUAL_NAME="$2"
-    #shellcheck source=/dev/null
-    . "$MODULE_PATH/$MODULE_ACTUAL_NAME.nyaa"
-    case $3 in
-        "h")
-            help
-        ;;
-        "v")
-            version
-        ;;
-        *)
-            main "$@"
-        ;;
-    esac
-}
-
-module_list() {
-    cd $MODULE_PATH || exit 0
-    for i in *.nyaa; do 
-        #shellcheck source=/dev/null
-        . "$(realpath "$i")"
-        echo ""
-        echo "Module name: $MODULE_NAME"
-        echo "Module version: $MODULE_VER"
-        echo "Module description: $MODULE_DESC"
-        echo ""
-    done
-}
-
 # Removing packages
 # Basically removes everything in the list_files file of the package.
 remove_packages() {
@@ -443,34 +399,12 @@ case $1 in
 ${BLUE}->${NC} h display help
 ${BLUE}->${NC} b build package
 ${BLUE}->${NC} i install binary packages
-${BLUE}->${NC} m nyaa modules
 ${BLUE}->${NC} I get info about a package
 ${BLUE}->${NC} r remove package
 ${BLUE}->${NC} u update packages
 ${BLUE}->${NC} U upgrade packages
 ${BLUE}->${NC} v display version
 " "$VERSION"
-    ;;
-    "m")
-        case $2 in
-            "l")
-                module_list
-             ;;
-            "i")
-                echo "WIP"
-            ;;
-            *)
-            if  [ ! "$2" = "" ]
-            then
-                module "$@"
-            else
-                printf "nyaa modules %s
-${BLUE}->${NC} l list modules
-You can run 'nyaa m <modulename>' to run the module directly.
-" "$VERSION"
-            fi
-            ;;
-        esac
     ;;
     "b")
         
