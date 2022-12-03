@@ -31,6 +31,7 @@ Now lets break it down.
 ## VARIABLES
 * NAME: Name of your package. Will show this name on the info command.
 * VERSION: Version of your package. It will be on the info command and updating it will result in nyaa upgrading the package.
+* RELEASE: Release of your package. It will also be on the info command and updating it will result in nyaa upgrading the package.
 * SOURCES: Source URL's of your package. Can be seperated by ';' like `test.url;testurl2`.
 * SHA256SUM: sha256sum output of the sources. Should align with sources. Can also be seperated by ';'.
 * DESCRIPTION: Description of the package. It will be on the info command.
