@@ -7,6 +7,11 @@
 `nyaa` is a package manager written in POSIX sh, mainly for use with Kreato Linux.
 `nyaa` is heavily inspired by the `kiss` package manager.
 
+# Dependencies
+* libarchive
+* coreutils
+* sed, awk
+
 # Installation
 Installation is done by choosing to install the `nyaa` package manager on `nyaastrap`.
 
