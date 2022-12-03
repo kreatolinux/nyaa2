@@ -221,6 +221,13 @@ install_package() {
         cp -rf "$REPO_DIR/$1/"* "$INSTALLED_DIR/$1"
         mv /tmp/"$1".log "$INSTALLED_DIR/$1/list_files"
     fi
+
+    . "$ROOT/$INSTALLED_DIR/$1/run"
+
+    if command -v post_install >/dev/null 2>&1
+    then
+        post_install || err "post installation failed"
+    fi
 }
 
 
