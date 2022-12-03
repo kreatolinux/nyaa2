@@ -17,6 +17,7 @@ An example runfile structure;
 ```
 NAME="test"
 VERSION="0.0.1"
+RELEASE="1"
 SOURCES="https://test.file/source/testfile.tar.gz"
 SHA256SUM="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  testfile.tar.gz"
 DESCRIPTION="Test package"
