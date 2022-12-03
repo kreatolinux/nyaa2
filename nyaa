@@ -159,7 +159,7 @@ build_package() {
     do
         echo "$line"
         INTERNAL_USE=1 down "$line"
-    done
+    done || exit 1
     
     echo "$SHA256SUM" | tr ';' '\n' | while read -r line
     do
@@ -170,10 +170,9 @@ build_package() {
                 err "nyaa: sha256sum skips are disabled, cannot skip"
             fi
         else
-	    echo "$line"
             echo "$line" | sha256sum -c || err "nyaa: sha256sum -c exited with $?"
         fi
-    done
+    done || exit 1
     build || err "nyaa: build failed"
     cd "$ROOT" || err "nyaa: $ROOT folder for some reason couldn't get created, please check permissions"
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
