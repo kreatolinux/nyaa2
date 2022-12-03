@@ -147,7 +147,7 @@ build_package() {
 
     # Sourcing the package runfile
     # shellcheck source=/dev/null
-    . "$REPO_DIR"/"$1"/run
+    . "$REPO_DIR"/"$1"/run || err "nyaa: couldn't source runfile, please check if it exists"
 
     # Checking if the package is a binary package or not
     [ "$IS_BINARY" = "y" ] && err "nyaa: this package is a binary package, install through 'nyaa i $1'"
