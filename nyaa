@@ -367,15 +367,18 @@ upgrade_packages() {
         . "$INSTALLED_DIR/$w"/run
 	LOCAL_VERSION=$VERSION
 	LOCAL_RELEASE=$RELEASE
+    LOCAL_EPOCH=$EPOCH
 	add_repo_dir "$w"
     #shellcheck source=/dev/null
     . "$REPO_DIR/$w"/run
 	REPO_VERSION=$VERSION
 	REPO_RELEASE=$RELEASE
-    if [ "$(version $LOCAL_VERSION)" -lt "$(version $REPO_VERSION)" ] || [ "$(version $LOCAL_RELEASE)" -lt "$(version $REPO_RELEASE)" ]
+    REPO_EPOCH=$EPOCH
+
+    if [ "$(version $LOCAL_EPOCH)" -lt "$(version $REPO_EPOCH)" ] || [ "$(version $LOCAL_VERSION)" -lt "$(version $REPO_VERSION)" ] || [ "$(version $LOCAL_RELEASE)" -lt "$(version $REPO_RELEASE)" ]
         then
             echo "nyaa: upgrading $w"
-            echo "nyaa: new version of $w: $REPO_VERSION $REPO_RELEASE"
+            echo "nyaa: new version of $w: $REPO_VERSION $REPO_RELEASE $REPO_EPOCH"
             if [ "$1" = "-b" ]; then
                 build_package "$w"
             else
@@ -397,6 +400,7 @@ get_info() {
     echo "package desc: $DESCRIPTION"
     echo "package ver:  $VERSION"
     echo "package rel:  $RELEASE"
+    [ -n "$EPOCH" ] && echo "package epoch: $EPOCH"
     echo "is installed: $ISINSTALLED"
 }
 
