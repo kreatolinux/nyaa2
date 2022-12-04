@@ -174,7 +174,7 @@ build_package() {
         fi
     done || exit 1
 
-    if ! command -v prepare >/dev/null 2>&1
+    if command -v prepare >/dev/null 2>&1
     then
         prepare || err "nyaa: prepare failed"
     else
