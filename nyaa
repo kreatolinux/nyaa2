@@ -350,8 +350,12 @@ remove_packages() {
 	        	fi
         	done < "${ROOT:?}/$INSTALLED_DIR/$i/list_files"
         	rm -rf "${ROOT:?}/${INSTALLED_DIR:?}/${i:?}/"
+            if command -v post_uninstall >/dev/null 2>&1
+            then
+                post_uninstall || err "post uninstall script failed"
+            fi
     	else
-        	custom_uninstall || err "custom_uninstall script failed"
+        	custom_uninstall || err "custom uninstall script failed"
     	fi
     done || exit 1
 }
