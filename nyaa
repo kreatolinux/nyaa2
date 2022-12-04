@@ -339,7 +339,7 @@ remove_packages() {
     	else
         	custom_uninstall || err "custom_uninstall script failed"
     	fi
-    done
+    done || exit 1
 }
 
 # Update repositories 
