@@ -320,7 +320,7 @@ dep_handler() {
 # Basically removes everything in the list_files file of the package.
 remove_packages() {
     chkroot
-    packages="$(echo $@ | sed '1s/^.//')"
+    packages="$(echo "$@" | sed '1s/^.//')"
     for i in $packages
     do
     	[ ! -f "$ROOT/$INSTALLED_DIR/$i/list_files" ] && err "nyaa: package $i is not installed"
@@ -485,9 +485,9 @@ ${BLUE}->${NC} v display version
     ;;
     "i")
 
-	packages="$(echo $@ | sed '1s/^.//;s/-y//' | cut -f1 -d'-r')"                    
-                                                                       
-        [ "$packages" = "" ] && err "nyaa: please enter a package name"    
+        packages="$(echo $@ | sed '1s/^.//;s/-y//;s/-r.*//;/^$/d;s/-n//')" # Get rid of flags and stuff like `b`, `-y`, `-r`, etc.
+
+        [ "$packages" = "" ] && err "nyaa: please enter a package name"
 
         # -r flag is for setting the ROOTFS variable.
         # This checks where the -r flag is (or isn't) and sets the variables accordingly
