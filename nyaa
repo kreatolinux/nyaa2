@@ -174,16 +174,14 @@ build_package() {
         fi
     done || exit 1
 
-    if [ "$AUTOEXTRACT" = "y" ]; then # This feature will be the default at some point
-        if ! command -v prepare >/dev/null 2>&1
-        then
-            prepare || err "nyaa: prepare failed"
-        else
-           echo "$SOURCES" | tr ';' '\n' | while read -r line
-           do
-               bsdtar -xvf "$(basename "$line")"
-           done
-        fi
+    if ! command -v prepare >/dev/null 2>&1
+    then
+        prepare || err "nyaa: prepare failed"
+    else
+        echo "$SOURCES" | tr ';' '\n' | while read -r line
+        do
+            bsdtar -xvf "$(basename "$line")"
+        done
     fi
 
     build || err "nyaa: build failed"
