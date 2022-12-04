@@ -173,6 +173,19 @@ build_package() {
             echo "$line" | sha256sum -c || err "nyaa: sha256sum -c exited with $?"
         fi
     done || exit 1
+
+    if [ "$AUTOEXTRACT" = "y" ]; then # This feature will be the default at some point
+        if ! command -v prepare >/dev/null 2>&1
+        then
+            prepare || err "nyaa: prepare failed"
+        else
+           echo "$SOURCES" | tr ';' '\n' | while read -r line
+           do
+               bsdtar -xvf "$(basename "$line")"
+           done
+        fi
+    fi
+
     build || err "nyaa: build failed"
     cd "$ROOT" || err "nyaa: $ROOT folder for some reason couldn't get created, please check permissions"
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
