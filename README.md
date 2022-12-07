@@ -27,8 +27,5 @@ The name was chosen because it is a original name (suprisingly nobody made a pac
 Also it is a short name that is extremely fast to type (which is important for a package manager since you will use it a ton). 
 The name also implies how much of a weeb i am.
 
-## Why is the repositories so small?
-The repositories are being worked on. This was much harder than i thought it would so you'll have to wait for a while until theres enough packages for a nice system.
-
 # License
 Licensed under GPLv3, see LICENSE for details.
