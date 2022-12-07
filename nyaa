@@ -70,6 +70,7 @@ down() {
             ;;
             "curl")
                 curl "$@" -O || err "nyaa: an error occured while trying to download"
+            ;;
             *)
                 wget "$@" || err "nyaa: an error occured while trying to download"
             ;;
