@@ -420,7 +420,7 @@ ${BLUE}->${NC} v display version
     ;;
     "b")
         
-        packages="$(echo "$@" | sed '1s/^.//;s/-y//;s/-r.*//;/^$/d;s/-n//')" # Get rid of flags and stuff like `b`, `-y`, `-r`, etc.
+        packages="$(echo "$@" | sed '1s/^.//;s/-y//;s/-o//;s/-r.*//;/^$/d;s/-n//')" # Get rid of flags and stuff like `b`, `-y`, `-r`, etc.
         
         [ "$packages" = "" ] && err "${RED}nyaa${NC}: please enter a package name"
 
@@ -487,7 +487,7 @@ ${BLUE}->${NC} v display version
     ;;
     "i")
 
-        packages="$(echo "$@" | sed '1s/^.//;s/-y//;s/-r.*//;/^$/d;s/-n//')" # Get rid of flags and stuff like `b`, `-y`, `-r`, etc.
+        packages="$(echo "$@" | sed '1s/^.//;s/-y//;s/-o//;s/-r.*//;/^$/d;s/-n//')" # Get rid of flags and stuff like `b`, `-y`, `-r`, etc.
 
         [ "$packages" = "" ] && err "${RED}nyaa${NC}: please enter a package name"
 
