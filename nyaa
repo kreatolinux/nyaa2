@@ -145,7 +145,7 @@ build_package() {
  
     add_repo_dir "$1"
 
-    unset prepare # Unset prepare before sourcing
+    unset -f prepare # Unset prepare before sourcing
     
     # Sourcing the package runfile
     # shellcheck source=/dev/null
@@ -338,8 +338,8 @@ remove_packages() {
     for i in $packages
     do
     	[ ! -f "$ROOT/$INSTALLED_DIR/$i/list_files" ] && err "nyaa: package $i is not installed"
-	unset custom_uninstall # Unset custom_uninstall before sourcing
-	unset post_uninstall # unset post_uninstall before sourcing 
+	unset -f custom_uninstall # Unset custom_uninstall before sourcing
+	unset -f post_uninstall # unset post_uninstall before sourcing 
     	#shellcheck source=/dev/null
 	. "$INSTALLED_DIR/$i/run"
     	if ! command -v custom_uninstall >/dev/null 2>&1
