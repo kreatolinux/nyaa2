@@ -19,6 +19,7 @@
 VERSION="v2.1a"
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
+RED='\033[0;31m'
 NC='\033[0m'
 CONF="/etc/nyaa.conf"
 INSTALLED_DIR="/etc/nyaa.installed/"
@@ -27,7 +28,7 @@ MAIN_BIN_REPO_DIR="/etc/nyaa-bin"
 # Root checker
 chkroot() {
      if [ "$(id -u)" != "0" ]; then
-        err "nyaa: you have to be root"
+        err "${RED}nyaa${NC}: you have to be root"
      fi
  }
 
@@ -63,32 +64,32 @@ down() {
     then
         case $DOWNLOADER in
             "aria2")
-                aria2c "$@" || err "nyaa: an error occured while trying to download"
+                aria2c "$@" || err "${RED}nyaa${NC}: an error occured while trying to download"
             ;;
             "axel")
-                axel "$@" || err "nyaa: an error occured while trying to download"
+                axel "$@" || err "${RED}nyaa${NC}: an error occured while trying to download"
             ;;
             "curl")
-                curl "$@" -O || err "nyaa: an error occured while trying to download"
+                curl "$@" -O || err "${RED}nyaa${NC}: an error occured while trying to download"
             ;;
             *)
-                wget "$@" || err "nyaa: an error occured while trying to download"
+                wget "$@" || err "${RED}nyaa${NC}: an error occured while trying to download"
             ;;
         esac
     else
-        err "nyaa: an error occured while trying to download"
+        err "${RED}nyaa${NC}: an error occured while trying to download"
     fi
 }
 
 err() {
     if [ "$1" != "-n" ]; then
-    	 printf "%s\n" "$1"
+    	  printf "%b\n" "$1"
          if [ -f "/tmp/nyaa.lock" ]; then
-	 	printf "nyaa: removing lockfile\n"
+	 	printf "%bnyaa%b: removing lockfile\n" "${BLUE}" "${NC}"
          	rm -f /tmp/nyaa.lock
 	 fi
     else
-	printf "%s\n" "$2"
+	printf "%b\n" "$2"
     fi
     exit 1
 }
@@ -98,7 +99,7 @@ add_repo_dir() {
     do
         [ -d "$i/$1" ] && export REPO_DIR="$i"
     done
-    [ -z "$REPO_DIR" ] && err "nyaa: package does not exist"
+    [ -z "$REPO_DIR" ] && err "${RED}nyaa${NC}: package does not exist"
 }
 
 
@@ -112,8 +113,8 @@ build_package() {
     export SRCDIR=/tmp/nyaa_srcdir
     export DESTDIR="$ROOT"
     
-    [ -f "/tmp/nyaa.lock" ] && err -n "nyaa: lockfile exists, will not proceed"    
-    touch /tmp/nyaa.lock || err "nyaa: couldnt create lockfile, please check permissions"  
+    [ -f "/tmp/nyaa.lock" ] && err -n "${RED}nyaa${NC}: lockfile exists, will not proceed"    
+    touch /tmp/nyaa.lock || err "${RED}nyaa${NC}: couldnt create lockfile, please check permissions"  
     
     trap "rm -f /tmp/nyaa.lock ; trap - EXIT;exit" EXIT INT HUP
 
@@ -131,13 +132,13 @@ build_package() {
     
     # Sourcing the package runfile
     # shellcheck source=/dev/null
-    . "$REPO_DIR"/"$1"/run || err "nyaa: couldn't source runfile, please check if it exists"
+    . "$REPO_DIR"/"$1"/run || err "${RED}nyaa${NC}: couldn't source runfile, please check if it exists"
 
     # Checking if the package is a binary package or not
-    [ "$IS_BINARY" = "y" ] && err "nyaa: this package is a binary package, install through 'nyaa i $1'"
+    [ "$IS_BINARY" = "y" ] && err "${RED}nyaa${NC}: this package is a binary package, install through '${BLUE}nyaa ${GREEN}i $1${NC}'"
     
     # Building the package and making it into a nice tarball
-    cd "$SRCDIR" || err "nyaa: $SRCDIR folder for some reason couldn't get created, please check permissions"
+    cd "$SRCDIR" || err "${RED}nyaa${NC}: $SRCDIR folder for some reason couldn't get created, please check permissions"
    
     echo "$SOURCES" | tr ';' '\n' | while read -r line
     do
@@ -151,16 +152,16 @@ build_package() {
             if [ "$SHA256SUM_SKIPS" = "1" ]; then
                 echo "nyaa: warn: sha256sum skipped"
             else
-                err "nyaa: sha256sum skips are disabled, cannot skip"
+                err "${RED}nyaa${NC}: sha256sum skips are disabled, cannot skip"
             fi
         else
-            echo "$line" | sha256sum -c || err "nyaa: sha256sum -c exited with $?"
+            echo "$line" | sha256sum -c || err "${RED}nyaa${NC}: sha256sum -c exited with $?"
         fi
     done || exit 1
 
     if command -v prepare >/dev/null 2>&1
     then
-        prepare || err "nyaa: prepare failed"
+        prepare || err "${RED}nyaa${NC}: prepare failed"
     else
         echo "$SOURCES" | tr ';' '\n' | while read -r line
         do
@@ -168,11 +169,11 @@ build_package() {
         done
     fi
 
-    build || err "nyaa: build failed"
-    cd "$ROOT" || err "nyaa: $ROOT folder for some reason couldn't get created, please check permissions"
+    build || err "${RED}nyaa${NC}: build failed"
+    cd "$ROOT" || err "${RED}nyaa${NC}: $ROOT folder for some reason couldn't get created, please check permissions"
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
     tar -czvf /etc/nyaa.tarballs/nyaa-tarball-"$1"-"$VERSION"-"$RELEASE".tar.gz ./*
-    cd /etc/nyaa.tarballs || err "nyaa: an error occured (check permissions)"
+    cd /etc/nyaa.tarballs || err "${RED}nyaa${NC}: an error occured (check permissions)"
     sha256sum nyaa-tarball-"$1"-"$VERSION"-"$RELEASE".tar.gz > nyaa-tarball-"$1"-"$VERSION"-"$RELEASE".tar.gz.sum
     unset ROOT
     
@@ -195,16 +196,16 @@ build_package() {
         esac
     fi
     
-    rm -f /tmp/nyaa.lock || err "nyaa: couldn't remove lockfile, please check permissions"
+    rm -f /tmp/nyaa.lock || err "${RED}nyaa${NC}: couldn't remove lockfile, please check permissions"
 }
 
 install_package() {
     # Install tarball 
     add_repo_dir "$1"
     if [ ! "$ROOT" = "" ]; then
-        cd /etc/nyaa.tarballs || err "nyaa: unknown error (check permissions)" 
-        sha256sum -c "$2.sum" || err "nyaa: checksum failed"
-        cd "$ROOT" || err "nyaa: unknown error" 
+        cd /etc/nyaa.tarballs || err "${RED}nyaa${NC}: unknown error (check permissions)" 
+        sha256sum -c "$2.sum" || err "${RED}nyaa${NC}: checksum failed"
+        cd "$ROOT" || err "${RED}nyaa${NC}: unknown error" 
         tar -hxvf "$2" > /tmp/"$1".log
         [ ! -d "$ROOT/$INSTALLED_DIR/$1" ] && mkdir -p "$ROOT/$INSTALLED_DIR/$1"
         cp -rf "$REPO_DIR/$1/"* "$ROOT/$INSTALLED_DIR/$1"
@@ -221,7 +222,7 @@ install_package() {
 
     if command -v post_install >/dev/null 2>&1
     then
-        post_install || err "post installation failed"
+        post_install || err "${RED}nyaa${NC}: post installation failed"
     fi
 }
 
@@ -236,18 +237,18 @@ install_binaries() {
     [ ! -d "/etc/nyaa.tarballs" ] && mkdir -p /etc/nyaa.tarballs
     TARBALL="nyaa-tarball-$1-$VERSION-$RELEASE.tar.gz"
     CHKSUM="$TARBALL.sum"
-    cd /etc/nyaa.tarballs || err "nyaa: an error occured"
+    cd /etc/nyaa.tarballs || err "${RED}nyaa${NC}: an error occured"
 
     for i in $(echo $MIRROR_PATH | tr ";" "\n")
     do
         if [ ! -f "/etc/nyaa.tarballs/$CHKSUM" ]; then
-            down "$i"/"$CHKSUM" || err "nyaa: chksum download failed with error"
+            down "$i"/"$CHKSUM" || err "${RED}nyaa${NC}: chksum download failed with error"
         else
             break
         fi
 
         if [ ! -f "/etc/nyaa.tarballs/$TARBALL" ]; then
-            down "$i"/"$TARBALL" || err "nyaa: tarball download failed with error"
+            down "$i"/"$TARBALL" || err "${RED}nyaa${NC}: tarball download failed with error"
         else
             break
         fi
@@ -295,11 +296,10 @@ chkdeps() {
 dep_handler() {
     add_repo_dir "$2"
     if [ "$2" = "" ]; then
-        printf "nyaa: have to supply a package name\n" 
-        exit 1
+        err "${RED}nyaa${NC}: have to supply a package name"
     else    
         if [ ! -d "$REPO_DIR/$2" ]; then
-            printf "nyaa: invalid package name/repo isnt initialized (nyaa u to initialize)\n"
+            printf "%bnyaa%b: invalid package name/repo isnt initialized (%bnyaa %bu%b to initialize)\n" "${BLUE}" "${NC}" "${BLUE}" "${GREEN}" "${NC}"
             exit 1
         else
             # shellcheck disable=SC2013
@@ -319,7 +319,7 @@ remove_packages() {
     packages="$(echo "$@" | sed '1s/^.//')"
     for i in $packages
     do
-    	[ ! -f "$ROOT/$INSTALLED_DIR/$i/list_files" ] && err "nyaa: package $i is not installed"
+    	[ ! -f "$ROOT/$INSTALLED_DIR/$i/list_files" ] && err "${RED}nyaa${NC}: package $i is not installed"
 	unset -f custom_uninstall # Unset custom_uninstall before sourcing
 	unset -f post_uninstall # unset post_uninstall before sourcing 
     	#shellcheck source=/dev/null
@@ -336,10 +336,10 @@ remove_packages() {
         	rm -rf "${ROOT:?}/${INSTALLED_DIR:?}/${i:?}/"
             if command -v post_uninstall >/dev/null 2>&1
             then
-                post_uninstall || err "post uninstall script failed"
+                post_uninstall || err "${RED}nyaa${NC}: post uninstall script failed"
             fi
     	else
-        	custom_uninstall || err "custom uninstall script failed"
+        	custom_uninstall || err "${RED}nyaa${NC}: custom uninstall script failed"
     	fi
     done || exit 1
 }
@@ -352,7 +352,7 @@ update_packages() {
     [ ! -d "$MAIN_BIN_REPO_DIR" ] && git clone https://github.com/kreatolinux/nyaa-repo-bin $MAIN_BIN_REPO_DIR
     for i in $(echo $REPO_PATH | tr ";" "\n")
     do
-    cd "$i" || err "nyaa: couldn't cd onto $i, exiting"
+    cd "$i" || err "${RED}nyaa${NC}: couldn't cd onto $i, exiting"
     git pull
     done
 }
@@ -361,7 +361,7 @@ update_packages() {
 # Package upgrader
 # Basically a simple for loop that checks if local package version equals to the repositories' package version. 
 upgrade_packages() {
-    cd "$INSTALLED_DIR" || err "nyaa: couldn't find nyaa installed directory"
+    cd "$INSTALLED_DIR" || err "${RED}nyaa${NC}: couldn't find nyaa installed directory"
     for w in *
     do
         # shellcheck source=/dev/null
@@ -378,8 +378,8 @@ upgrade_packages() {
 
     if [ "$(version "$LOCAL_EPOCH")" -lt "$(version "$REPO_EPOCH")" ] || [ "$(version "$LOCAL_VERSION")" -lt "$(version "$REPO_VERSION")" ] || [ "$(version "$LOCAL_RELEASE")" -lt "$(version "$REPO_RELEASE")" ]
         then
-            echo "nyaa: upgrading $w"
-            echo "nyaa: new version of $w: $REPO_VERSION $REPO_RELEASE $REPO_EPOCH"
+            echo "${BLUE}nyaa${NC}: upgrading $w"
+            echo "${BLUE}nyaa${NC}: new version of $w: $REPO_VERSION $REPO_RELEASE $REPO_EPOCH"
             if [ "$1" = "-b" ]; then
                 build_package "$w"
             else
@@ -397,11 +397,11 @@ get_info() {
     . "$REPO_DIR/$1"/run
     [ -d "$INSTALLED_DIR/$1" ] && ISINSTALLED=yes
     [ ! -d "$INSTALLED_DIR/$1" ] && ISINSTALLED=no
-    echo "package name: $NAME"
-    echo "package desc: $DESCRIPTION"
-    echo "package ver:  $VERSION"
-    echo "package rel:  $RELEASE"
-    [ -n "$EPOCH" ] && echo "package epoch: $EPOCH"
+    echo "package ${BLUE}name${NC}: $NAME"
+    echo "package ${BLUE}desc${NC}: $DESCRIPTION"
+    echo "package ${BLUE}ver${NC}:  $VERSION"
+    echo "package ${BLUE}rel${NC}:  $RELEASE"
+    [ -n "$EPOCH" ] && echo "package ${BLUE}epoch${NC}: $EPOCH"
     echo "is installed: $ISINSTALLED"
 }
 
@@ -422,7 +422,7 @@ ${BLUE}->${NC} v display version
         
         packages="$(echo "$@" | sed '1s/^.//;s/-y//;s/-r.*//;/^$/d;s/-n//')" # Get rid of flags and stuff like `b`, `-y`, `-r`, etc.
         
-        [ "$packages" = "" ] && err "nyaa: please enter a package name"
+        [ "$packages" = "" ] && err "${RED}nyaa${NC}: please enter a package name"
 
         # -r flag is for setting the ROOTFS variable.
         # This checks where the -r flag is (or isn't) and sets the variables accordingly
@@ -454,10 +454,10 @@ ${BLUE}->${NC} v display version
 	done
 
 	if [ "$3" != "-y" ] && [ "$4" != "-y" ] && [ "$3" != "-n" ] && [ "$4" != "-n" ]; then
-            printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$packages"
+            printf "${BLUE}Packages${NC}: ${GREEN}%s ${BLUE}%s${NC}\nDo you want to continue to the installation? (${BLUE}y${NC}/${RED}N${NC}) " "$deps" "$packages"
             read -r yn
         else
-            printf "Packages: %s %s\n" "$deps" "$2"
+            printf "${BLUE}Packages${NC}: ${GREEN}%s ${BLUE}%s${NC}\n" "$deps" "$2"
         fi
 
         # Need to refactor this code
@@ -472,12 +472,12 @@ ${BLUE}->${NC} v display version
                     fi
                 done
             else
-                echo "nyaa: dependencies already installed, continuing"
+                echo "${BLUE}nyaa${NC}: dependencies already installed, continuing"
             fi
 
 	    for i in $packages
 	    do
-		build_package "$i" "$3" "$4" "$5" "$6" || err "nyaa: an error occured during compilation"
+		build_package "$i" "$3" "$4" "$5" "$6" || err "${RED}nyaa${NC}: an error occured during compilation"
 	    done
 	
         else    
@@ -489,7 +489,7 @@ ${BLUE}->${NC} v display version
 
         packages="$(echo "$@" | sed '1s/^.//;s/-y//;s/-r.*//;/^$/d;s/-n//')" # Get rid of flags and stuff like `b`, `-y`, `-r`, etc.
 
-        [ "$packages" = "" ] && err "nyaa: please enter a package name"
+        [ "$packages" = "" ] && err "${RED}nyaa${NC}: please enter a package name"
 
         # -r flag is for setting the ROOTFS variable.
         # This checks where the -r flag is (or isn't) and sets the variables accordingly
@@ -521,10 +521,10 @@ ${BLUE}->${NC} v display version
         done         
 	
 	if [ "$3" != "-y" ] && [ "$4" != "-y" ]; then
-            printf "Packages: %s %s\nDo you want to continue to the installation? (y/N) " "$deps" "$packages"
+            printf "${BLUE}Packages${NC}: ${GREEN}%s ${BLUE}%s${NC}\nDo you want to continue to the installation? (${BLUE}y${NC}/${RED}N${NC}) " "$deps" "$packages"
             read -r yn
         else
-            printf "Packages: %s %s\n" "$deps" "$2"
+            printf "${BLUE}Packages${NC}: ${GREEN}%s ${BLUE}%s${NC}\n" "$deps" "$2"
         fi
         if [ "$yn" = "y" ] || [ "$yn" = "Y" ] || [ "$3" = "-y" ] || [ "$4" = "-y" ]; then
             if [ "$deps" != "" ]; then
@@ -532,11 +532,11 @@ ${BLUE}->${NC} v display version
                     [ ! -d "$ROOT/$INSTALLED_DIR/$word" ] && install_binaries "$word" -r "$(realpath $ROOT)" 
                 done
             else
-                echo "nyaa: dependencies already installed, continuing"
+                echo "${BLUE}nyaa${NC}: dependencies already installed, continuing"
             fi
             for i in $packages
             do  
-                install_binaries "$i" "$3" "$4" "$5" "$6" || err "nyaa: an error occured during installation"                
+                install_binaries "$i" "$3" "$4" "$5" "$6" || err "${RED}nyaa${NC}: an error occured during installation"                
             done   
         else    
             echo "nyaa: exiting."
@@ -581,6 +581,6 @@ There is NO WARRANTY, to the extent permitted by law.
 " "$VERSION"
     ;;
     *)
-        printf "run 'nyaa h' for help\n"
+        printf "run '%bnyaa %bh%b' for help\n" "${BLUE}" "${GREEN}" "${NC}"
         ;;
 esac
