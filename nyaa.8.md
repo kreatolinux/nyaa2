@@ -4,11 +4,11 @@
 nyaa - package manager
 
 # SYNOPSIS
-**nyaa** [h] [b] [m] [s] [i] [I] [c] [r] [u] [U] [v] [PACKAGE] [-o] [-r] [ROOTFS] [-y]
+**nyaa** [h] [b] [m] [s] [i] [I] [c] [r] [u] [U] [v] [PACKAGE] [-y] [-o] [-r] [ROOTFS]
 
 # DESCRIPTION
-Nyaa is a package manager written in POSIX sh. It is under 400> LOC and is meant to be used with Kreato Linux.
-Nyaa uses simple build scripts similar to PKGBUILDs found in the pacman package manager.
+Nyaa is a package manager written in POSIX sh. It is under 700> LOC and is meant to be used with Kreato Linux.
+Nyaa uses simple build scripts called runfiles, similar to PKGBUILDs found in the pacman package manager.
 
 **h**
     Output help
