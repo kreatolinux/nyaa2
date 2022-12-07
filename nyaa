@@ -59,10 +59,6 @@ defvalues
 [ -f "$CONF" ] && . $CONF # Source the configuration file if it exists
 
 down() {
-    if [ "$INTERNAL_USE" = "" ] && [ -z "$INTERNAL_USE" ]; then
-        echo "nyaa: warn: using down externally is not supported anymore, please update to SOURCES"
-    fi
-
     if [ "$1" != "" ];
     then
         case $DOWNLOADER in
@@ -72,6 +68,8 @@ down() {
             "axel")
                 axel "$@" || err "nyaa: an error occured while trying to download"
             ;;
+            "curl")
+                curl "$@" -O || err "nyaa: an error occured while trying to download"
             *)
                 wget "$@" || err "nyaa: an error occured while trying to download"
             ;;
@@ -108,23 +106,6 @@ build_package() {
     # Checking if the user is root
     chkroot
     
-    # Set up some aliases so downloader does get used no matter what
-    alias wget="down"
-    alias axel="down"
-    alias aria2c="down"
-    
-    # Prebuilt tarball installer
-    if [ -f "$2" ] 
-    then
-          tar -hztf "$2" > /tmp/"$1".log
-        if [ "$4" = "-r" ]; then
-            ROOT="$5" install_package "$1" "$2"
-        else
-            ROOT="/" install_package "$1" "$2"
-        fi
-        exit 0
-     fi
-
     # Exporting variables required to build the package
     export ROOT=/tmp/nyaa_build
     export SRCDIR=/tmp/nyaa_srcdir
@@ -159,8 +140,8 @@ build_package() {
    
     echo "$SOURCES" | tr ';' '\n' | while read -r line
     do
-        echo "$line"
-        INTERNAL_USE=1 down "$line"
+        echo "downloading from $line"
+        down "$line"
     done || exit 1
     
     echo "$SHA256SUM" | tr ';' '\n' | while read -r line
@@ -259,13 +240,13 @@ install_binaries() {
     for i in $(echo $MIRROR_PATH | tr ";" "\n")
     do
         if [ ! -f "/etc/nyaa.tarballs/$CHKSUM" ]; then
-            INTERNAL_USE=1 down "$i"/"$CHKSUM" || err "nyaa: chksum download failed with error"
+            down "$i"/"$CHKSUM" || err "nyaa: chksum download failed with error"
         else
             break
         fi
 
         if [ ! -f "/etc/nyaa.tarballs/$TARBALL" ]; then
-            INTERNAL_USE=1 down "$i"/"$TARBALL" || err "nyaa: tarball download failed with error"
+            down "$i"/"$TARBALL" || err "nyaa: tarball download failed with error"
         else
             break
         fi
