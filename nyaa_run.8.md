@@ -37,9 +37,15 @@ Now lets break it down.
 * SHA256SUM: sha256sum output of the sources. Should align with sources. Can also be seperated by ';'.
 * DESCRIPTION: Description of the package. It will be on the info command.
 
-
 ## FUNCTIONS
 * build: The main function.
+
+## OPTIONAL FUNCTIONS AND VARIABLES
+* EPOCH: Only use this when the versioning logic fail for the package.
+* prepare(): Files downloaded from SOURCES are extracted by default. Use prepare() to prevent this and have custom prepare procedure.
+* post_install(): Does what it says. Runs commands after installation.
+* post_uninstall(): Does what it says. Runs commands after uninstallation.
+* custom_uninstall(): Allows you to have a custom uninstall procedure and bypasses the package removal procedure. Only use this when needed.
 
 # AUTHOR
 Written by Kreato.
