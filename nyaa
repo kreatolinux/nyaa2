@@ -378,8 +378,13 @@ upgrade_packages() {
 
     if [ "$(version "$LOCAL_EPOCH")" -lt "$(version "$REPO_EPOCH")" ] || [ "$(version "$LOCAL_VERSION")" -lt "$(version "$REPO_VERSION")" ] || [ "$(version "$LOCAL_RELEASE")" -lt "$(version "$REPO_RELEASE")" ]
         then
-            echo "${BLUE}nyaa${NC}: upgrading $w"
-            echo "${BLUE}nyaa${NC}: new version of $w: $REPO_VERSION $REPO_RELEASE $REPO_EPOCH"
+            printf "%bnyaa%b: upgrading %s" "${BLUE}" "${NC}" "$w"
+            if [ -z "$REPO_EPOCH" ]; then
+              printf "%bnyaa%b: new version of %s: %s-%s" "${BLUE}" "${NC}" "$w" "$REPO_VERSION" "$REPO_RELEASE" 
+            else
+              printf "%bnyaa%b: new version of %s: %s-%s-%s" "${BLUE}" "${NC}" "$w" "$REPO_VERSION" "$REPO_RELEASE" "$REPO_EPOCH" 
+            fi
+
             if [ "$1" = "-b" ]; then
                 build_package "$w"
             else
@@ -397,12 +402,12 @@ get_info() {
     . "$REPO_DIR/$1"/run
     [ -d "$INSTALLED_DIR/$1" ] && ISINSTALLED=yes
     [ ! -d "$INSTALLED_DIR/$1" ] && ISINSTALLED=no
-    echo "package ${BLUE}name${NC}: $NAME"
-    echo "package ${BLUE}desc${NC}: $DESCRIPTION"
-    echo "package ${BLUE}ver${NC}:  $VERSION"
-    echo "package ${BLUE}rel${NC}:  $RELEASE"
-    [ -n "$EPOCH" ] && echo "package ${BLUE}epoch${NC}: $EPOCH"
-    echo "is installed: $ISINSTALLED"
+    printf "package %bname%b: %s\n" "${BLUE}" "${NC}" "$NAME"
+    printf "package %bdesc%b: %s\n" "${BLUE}" "${NC}" "$DESCRIPTION"
+    printf "package %bver%b:  %s\n" "${BLUE}" "${NC}" "$VERSION"
+    printf "package %brel%b:  %s\n" "${BLUE}" "${NC}" "$RELEASE"
+    [ -n "$EPOCH" ] && printf "package %bepoch%b: %s" "${BLUE}" "${NC}" "$EPOCH"
+    printf "is %binstalled%b: %s\n" "${BLUE}" "${NC}" "$ISINSTALLED"
 }
 
 case $1 in
@@ -472,7 +477,7 @@ ${BLUE}->${NC} v display version
                     fi
                 done
             else
-                echo "${BLUE}nyaa${NC}: dependencies already installed, continuing"
+                printf "%bnyaa%b: dependencies already installed, continuing" "${BLUE}" "${NC}"
             fi
 
 	    for i in $packages
@@ -532,7 +537,7 @@ ${BLUE}->${NC} v display version
                     [ ! -d "$ROOT/$INSTALLED_DIR/$word" ] && install_binaries "$word" -r "$(realpath $ROOT)" 
                 done
             else
-                echo "${BLUE}nyaa${NC}: dependencies already installed, continuing"
+                printf "%bnyaa%b: dependencies already installed, continuing" "${BLUE}" "${NC}"
             fi
             for i in $packages
             do  
