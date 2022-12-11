@@ -271,47 +271,6 @@ install_binaries() {
     esac
 }
 
-    
-
-#
-# Dependency Handler
-#
-
-# Dependency handler consists of 2 seperate functions that call each other. 
-# These functions are named `chkdeps`, `dep_handler` as you can see below. 
-# This allows us to make a complete loop that doesnt exit until dependencies are in the `deps` (and `bdeps` if the package is built) environment variable.
-
-chkdeps() {
-    add_repo_dir "$2"
-    # shellcheck disable=SC2013
-    for cLine in $(cat "$REPO_DIR/$2/deps" 2> /dev/null)
-    do
-    if [ ! -d "$ROOT/$INSTALLED_DIR/$2" ]; then
-        deps="$cLine $deps"
-        dep_handler "" "$cLine"
-    fi
-    done
-}
-
-dep_handler() {
-    add_repo_dir "$2"
-    if [ "$2" = "" ]; then
-        err "${RED}nyaa${NC}: have to supply a package name"
-    else    
-        if [ ! -d "$REPO_DIR/$2" ]; then
-            printf "%bnyaa%b: invalid package name/repo isnt initialized (%bnyaa %bu%b to initialize)\n" "${BLUE}" "${NC}" "${BLUE}" "${GREEN}" "${NC}"
-            exit 1
-        else
-            # shellcheck disable=SC2013
-            for Line in $(cat "$REPO_DIR/$2/deps" 2> /dev/null)	
-            do
-                deps="$Line $deps"
-                chkdeps "" "$Line"
-            done
-        fi
-    fi
-}
-
 # Removing packages
 # Basically removes everything in the list_files file of the package.
 remove_packages() {
@@ -448,9 +407,10 @@ ${BLUE}->${NC} v display version
         esac 
         
         for i in $packages
-	do	
-		dep_handler "" "$i"
-        	deps="$(echo "$deps" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
+	do	    
+          pkg="$i"
+          add_repo_dir "$i"
+          deps="$(depper --pkg="$pkg" --repo="$REPO_DIR" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
 	done
 	
 	for i in $deps
@@ -513,13 +473,16 @@ ${BLUE}->${NC} v display version
                 export ROOT="/" 
             ;;
         esac 
+       
+
+
+        for i in $packages
+	      do	    
+          pkg="$i"
+          add_repo_dir "$i"
+          deps="$(depper --pkg="$pkg" --repo="$REPO_DIR" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
+	      done 
         
-	for i in $packages                                                                                               
-        do                                                                                                               
-                dep_handler "" "$i"                                                                                      
-                deps="$(echo "$deps" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"                                            
-        done                                                                                                             
-                                                                                                                         
         for i in $deps                                                                                                   
         do                                                                                                               
                 packages="$(echo "$packages" | sed "s/$i//g")"
