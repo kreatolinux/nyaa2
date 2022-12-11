@@ -410,7 +410,7 @@ ${BLUE}->${NC} v display version
 	do	    
           pkg="$i"
           add_repo_dir "$i"
-          deps="$(depper --pkg="$pkg" --repo="$REPO_DIR" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
+          deps="$(depper --pkg="$pkg" --repo="$REPO_DIR")"
 	done
 	
 	for i in $deps
@@ -419,7 +419,7 @@ ${BLUE}->${NC} v display version
 	done
 
 	if [ "$3" != "-y" ] && [ "$4" != "-y" ] && [ "$3" != "-n" ] && [ "$4" != "-n" ]; then
-            printf "${BLUE}Packages${NC}: ${GREEN}%s ${BLUE}%s${NC}\nDo you want to continue to the installation? (${BLUE}y${NC}/${RED}N${NC}) " "$deps" "$packages"
+            printf "${BLUE}Packages${NC}:${GREEN}%s ${BLUE}%s${NC}\nDo you want to continue to the installation? (${BLUE}y${NC}/${RED}N${NC}) " "$deps" "$packages"
             read -r yn
         else
             printf "${BLUE}Packages${NC}: ${GREEN}%s ${BLUE}%s${NC}\n" "$deps" "$2"
@@ -480,7 +480,7 @@ ${BLUE}->${NC} v display version
 	      do	    
           pkg="$i"
           add_repo_dir "$i"
-          deps="$(depper --pkg="$pkg" --repo="$REPO_DIR" | tr ' ' '\n' | awk '!x[$0]++' | xargs)"
+          deps="$(depper --pkg="$pkg" --repo="$REPO_DIR")"
 	      done 
         
         for i in $deps                                                                                                   
@@ -489,7 +489,7 @@ ${BLUE}->${NC} v display version
         done         
 	
 	if [ "$3" != "-y" ] && [ "$4" != "-y" ]; then
-            printf "${BLUE}Packages${NC}: ${GREEN}%s ${BLUE}%s${NC}\nDo you want to continue to the installation? (${BLUE}y${NC}/${RED}N${NC}) " "$deps" "$packages"
+            printf "${BLUE}Packages${NC}:${GREEN}%s ${BLUE}%s${NC}\nDo you want to continue to the installation? (${BLUE}y${NC}/${RED}N${NC}) " "$deps" "$packages"
             read -r yn
         else
             printf "${BLUE}Packages${NC}: ${GREEN}%s ${BLUE}%s${NC}\n" "$deps" "$2"
