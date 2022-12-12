@@ -1,3 +1,6 @@
+# DEPRECATED
+Development has shifted to [nyaa3](https://github.com/kreatolinux/nyaa3), please use that if possible.
+
 <p align="left">
 <img src="https://github.com/Kreato-Linux/logo/blob/master/withtext.png"> 
   <img src="https://github.com/Kreato-Linux/logo/blob/master/pkg.png" height="10%" width="10%">
