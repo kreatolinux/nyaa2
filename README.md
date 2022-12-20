@@ -1,5 +1,6 @@
-# DEPRECATED
+# UNSUPPORTED
 Development has shifted to [nyaa3](https://github.com/kreatolinux/nyaa3), please use that if possible.
+Support won't be given for nyaa2.
 
 <p align="left">
 <img src="https://github.com/Kreato-Linux/logo/blob/master/withtext.png"> 
